@@ -289,18 +289,19 @@ export function completeBlueprint(s: SimState, bp: Blueprint): void {
 const roomCache = new WeakMap<SimState, { version: number; room: Int32Array }>();
 
 /**
- * Room id for every tile: areas fully enclosed by walls, doors or mountains. Outdoors is -1.
- * Cached until the board changes.
+ * Room id for every tile: areas fully enclosed by walls, doors or mountains, with at least one
+ * built wall or door. Outdoors is -1. Cached until the board changes.
  */
 export function roomMap(s: SimState): Int32Array {
   const cached = roomCache.get(s);
   if (cached && cached.version === s.structVersion) return cached.room;
   const room = new Int32Array(MAP_N).fill(-1);
   const seen = new Uint8Array(MAP_N);
-  const boundary = (t: number): boolean => {
+  const built = (t: number): boolean => {
     const k = s.structKind[t];
-    return k === SK.WALL || k === SK.STONE_WALL || k === SK.DOOR || s.terrain[t] === TERRAIN.MOUNTAIN;
+    return k === SK.WALL || k === SK.STONE_WALL || k === SK.DOOR;
   };
+  const boundary = (t: number): boolean => built(t) || s.terrain[t] === TERRAIN.MOUNTAIN;
   const stack: number[] = [];
   const region: number[] = [];
   let next = 0;
@@ -308,6 +309,7 @@ export function roomMap(s: SimState): Int32Array {
     if (seen[t0] || boundary(t0)) continue;
     region.length = 0;
     let open = false;
+    let walled = false;
     seen[t0] = 1;
     stack.push(t0);
     while (stack.length > 0) {
@@ -321,12 +323,17 @@ export function roomMap(s: SimState): Int32Array {
         const ny = y + DIRS[d][1];
         if (!inBounds(nx, ny)) continue;
         const n = tileIndex(nx, ny);
-        if (seen[n] || boundary(n)) continue;
+        if (boundary(n)) {
+          if (built(n)) walled = true;
+          continue;
+        }
+        if (seen[n]) continue;
         seen[n] = 1;
         stack.push(n);
       }
     }
-    if (!open && region.length <= 160) {
+    // A pocket closed off only by mountains is still the outdoors.
+    if (!open && walled && region.length <= 160) {
       for (const t of region) room[t] = next;
       next++;
     }

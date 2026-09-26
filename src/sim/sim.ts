@@ -4,7 +4,7 @@
  */
 import { endJob, tickPawn } from './ai';
 import { B, MAP_N, TICKS_PER_HOUR } from './constants';
-import { isEdge, tileIndex, tileX, tileY } from './grid';
+import { compass, isEdge, tileIndex, tileX, tileY } from './grid';
 import { generateMap } from './mapgen';
 import { computeMood } from './mood';
 import { INF, enterCost, flood, isBashTarget } from './path';
@@ -163,7 +163,12 @@ function updateRaid(s: SimState): void {
       stolen: 0,
       escapedLoot: 0,
     };
-    log(s, 'raid', `Scouts spotted a goblin war band of ${size}. They will arrive in about ${spanLabel(s.nextRaidTick - s.tick)}.`, true);
+    log(
+      s,
+      'raid',
+      `Scouts spotted a goblin war band of ${size} to the ${compass(s.home, edge)}. They will arrive in about ${spanLabel(s.nextRaidTick - s.tick)}.`,
+      true,
+    );
     return;
   }
 
@@ -171,7 +176,7 @@ function updateRaid(s: SimState): void {
     if (s.tick < r.arriveTick) return;
     spawnRaiders(s, r);
     r.phase = 'active';
-    log(s, 'raid', `The goblins are here! ${r.size} raiders are attacking.`);
+    log(s, 'raid', `The goblins are here! ${r.size} raiders are attacking from the ${compass(s.home, r.edge)}.`);
     return;
   }
 

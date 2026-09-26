@@ -164,7 +164,7 @@ describe('raids', () => {
     opening(s);
     run(s, TICKS_PER_DAY * 3);
     const texts = s.log.map((e) => e.text);
-    expect(texts.some((t) => t.startsWith('Scouts spotted a goblin war band of 3'))).toBe(true);
+    expect(texts.some((t) => t.startsWith('Scouts spotted a goblin war band of 3 to the'))).toBe(true);
     expect(texts.some((t) => t.startsWith('The goblins are here!'))).toBe(true);
     expect(s.raidCount + (s.over ? 1 : 0)).toBeGreaterThanOrEqual(1);
     expect(s.pawns.some((p) => p.kind === 'goblin') && !s.raid).toBe(false);

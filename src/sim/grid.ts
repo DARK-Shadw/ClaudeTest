@@ -16,6 +16,15 @@ export function cheb(a: number, b: number): number {
   return Math.max(Math.abs(tileX(a) - tileX(b)), Math.abs(tileY(a) - tileY(b)));
 }
 
+/** "north", "south-east"… from one tile toward another. North is up the map. */
+export function compass(from: number, to: number): string {
+  const dx = tileX(to) - tileX(from);
+  const dy = tileY(to) - tileY(from);
+  const ns = dy < -Math.abs(dx) / 2 ? 'north' : dy > Math.abs(dx) / 2 ? 'south' : '';
+  const ew = dx > Math.abs(dy) / 2 ? 'east' : dx < -Math.abs(dy) / 2 ? 'west' : '';
+  return ns && ew ? `${ns}-${ew}` : ns || ew || 'nearby';
+}
+
 export function isEdge(t: number): boolean {
   const x = tileX(t);
   const y = tileY(t);
