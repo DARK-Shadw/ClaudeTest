@@ -14,7 +14,7 @@ import { chance, randInt, seedRng } from './rng';
 import { seedRelations, socialTick } from './social';
 import { tickAt } from './time';
 import type { Pawn, SimState, Species, TechId } from './types';
-import { firstName, isLand, log, placeItemNear, story, walkable } from './world';
+import { firstName, isLand, log, nearbyTiles, placeItemNear, story, walkable } from './world';
 
 export { FIRST_RAID_TICK };
 
@@ -126,7 +126,9 @@ function spawnWildlife(s: SimState): void {
     for (let tries = 0; tries < 40; tries++) {
       const t = randInt(s.rng, 0, MAP_N - 1);
       if (!walkable(s, t) || cheb(t, s.home) < 14) continue;
-      for (let i = 0; i < n; i++) s.pawns.push(makeAnimal(s, t, species));
+      // A herd grazes side by side, not in a heap.
+      const spots = [t, ...nearbyTiles(t, 2).filter((n) => walkable(s, n))];
+      for (let i = 0; i < n; i++) s.pawns.push(makeAnimal(s, spots[i % spots.length], species));
       break;
     }
   }

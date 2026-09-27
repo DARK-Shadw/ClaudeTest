@@ -25,7 +25,7 @@ export function pawnLabel(p: Pawn): string {
 /** "Goblin archer", "Deer", "Carpenter, 34". */
 export function pawnTitle(p: Pawn): string {
   if (p.kind === 'goblin') return p.chiefId ? 'Goblin chief' : GOBLIN_UNITS[p.unit || 'fighter'].label;
-  if (p.kind === 'animal') return p.hostile ? 'Hunting wolf' : SPECIES[p.species as keyof typeof SPECIES].label;
+  if (p.kind === 'animal') return p.hostile ? 'Hunting the settlement' : p.marked ? 'Marked for hunting' : `Wild ${SPECIES[p.species as keyof typeof SPECIES].label.toLowerCase()}`;
   return `${p.calling}, ${p.age}`;
 }
 
