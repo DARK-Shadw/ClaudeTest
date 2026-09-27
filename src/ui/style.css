@@ -158,8 +158,27 @@ summary:focus-visible {
   color: var(--sky);
 }
 
-.badge-flee {
+.badge-flee,
+.badge-brawl {
   color: var(--sun);
+}
+
+.badge-drafted {
+  color: var(--sky);
+}
+
+.badge-hunt {
+  color: var(--ember);
+}
+
+.pawn-label.chief {
+  background: rgb(120 20 20 / 0.85);
+  color: #ffd6cf;
+}
+
+.pawn-label.hunt {
+  padding: 2px 4px;
+  background: rgb(20 29 51 / 0.6);
 }
 
 /* HUD frame */
@@ -206,11 +225,6 @@ summary:focus-visible {
   font-weight: 700;
 }
 
-.clock > span:last-child {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .clock .i {
   color: var(--sun);
 }
@@ -234,20 +248,33 @@ summary:focus-visible {
   font-weight: 600;
 }
 
-.stock:nth-child(1) .i {
+.s-wood .i {
   color: #e2a468;
 }
 
-.stock:nth-child(2) .i {
+.s-stone .i {
   color: #c6ccd6;
 }
 
-.stock:nth-child(3) .i {
+.s-iron .i {
+  color: #e08a55;
+}
+
+.s-meal .i {
+  color: #ffd27a;
+}
+
+.s-food .i {
   color: #ff7a8f;
 }
 
-.stock:nth-child(4) .i {
-  color: #ffd27a;
+.clock .season {
+  color: var(--muted);
+}
+
+.clock .time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .top-actions {
@@ -280,14 +307,23 @@ summary:focus-visible {
 
 .colonists {
   display: flex;
-  flex-wrap: wrap;
   gap: 4px;
   flex: 1;
   min-width: 0;
+  padding-top: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  pointer-events: auto;
+}
+
+.colonists::-webkit-scrollbar {
+  display: none;
 }
 
 .pawn-chip {
   position: relative;
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -352,6 +388,10 @@ summary:focus-visible {
   color: var(--sun-ink);
 }
 
+.pawn-chip.in-squad .avatar {
+  box-shadow: 0 0 0 2px var(--sky);
+}
+
 .pawn-chip.downed .avatar::before {
   filter: grayscale(0.85) brightness(0.7);
 }
@@ -403,6 +443,11 @@ summary:focus-visible {
 
 .banner b {
   font-weight: 700;
+}
+
+.banner u {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
 }
 
 .banner.warn {
@@ -1215,4 +1260,734 @@ details.how b {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* v2: tabs, squad, settler pages, colony */
+
+.head-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--raised);
+}
+
+.tabs.wrap {
+  flex-wrap: wrap;
+}
+
+.tabs.wrap .tab {
+  flex: 1 0 22%;
+  padding: 7px 4px;
+}
+
+.tab {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tab .i {
+  width: 16px;
+  height: 16px;
+}
+
+.tab.on {
+  background: var(--sun);
+  color: var(--sun-ink);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.i.tiny {
+  width: 12px;
+  height: 12px;
+  vertical-align: -1px;
+}
+
+.bars.one {
+  grid-template-columns: 1fr;
+}
+
+.gear {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gear-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.05);
+  min-width: 0;
+}
+
+.gear-item > .i {
+  color: var(--sun);
+}
+
+.gear-item > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.gear-item b {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gear-item em {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-style: normal;
+}
+
+.wide-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  border-radius: 14px;
+  background: var(--raised);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.wide-btn.accent {
+  background: var(--sky);
+  color: #06233a;
+}
+
+/* Skills */
+
+.skill-list {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.skill {
+  display: grid;
+  grid-template-columns: 86px 30px 1fr 22px;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.skill .nm {
+  color: var(--paper);
+}
+
+.skill.off {
+  opacity: 0.4;
+}
+
+.passion {
+  display: flex;
+  height: 16px;
+}
+
+.passion svg {
+  width: 14px;
+  height: 16px;
+}
+
+.passion.p1,
+.i.p1 {
+  color: var(--sun);
+}
+
+.passion.p2,
+.i.p2 {
+  color: #ff8a3d;
+}
+
+.lvl {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.lvl i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--v);
+  border-radius: 99px;
+  background: linear-gradient(90deg, #5aa7e8, var(--sky));
+}
+
+.lvl u {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--x);
+  height: 2px;
+  background: rgb(255 255 255 / 0.55);
+}
+
+.skill b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-order {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
+/* Social */
+
+.social-sum {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.rel-list {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.rel {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.05);
+  cursor: pointer;
+}
+
+.rel.open {
+  background: rgb(255 255 255 / 0.09);
+}
+
+.rel .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.rel-name {
+  display: grid;
+  min-width: 0;
+}
+
+.rel-name b {
+  font-size: 13.5px;
+}
+
+.rel-name em {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.op {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.reasons {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 3px;
+  margin: 4px 0 2px;
+  padding: 0 0 0 22px;
+  list-style: none;
+  font-size: 12.5px;
+}
+
+.reasons li {
+  display: flex;
+  gap: 8px;
+}
+
+.reasons b {
+  min-width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.lost {
+  display: grid;
+  gap: 5px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.lost li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lost b {
+  color: var(--paper);
+}
+
+.lost .i {
+  width: 16px;
+  height: 16px;
+}
+
+/* Story */
+
+.story-p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.story-p .label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.trait-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.trait-list li {
+  display: grid;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--raised);
+}
+
+.trait-list b {
+  font-size: 13.5px;
+}
+
+.trait-list span {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.grudge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgb(255 107 87 / 0.14);
+  color: #ffd9d2;
+  font-size: 13px;
+}
+
+.grudge .i {
+  color: var(--ember);
+}
+
+.timeline {
+  display: grid;
+  gap: 7px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.timeline time {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+
+.timeline p {
+  margin: 0;
+}
+
+/* Build cards */
+
+.build-card.locked {
+  opacity: 0.55;
+}
+
+.build-card.locked em {
+  color: var(--muted);
+}
+
+/* Squad */
+
+.squad {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgb(22 44 74 / 0.94);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.3);
+  pointer-events: auto;
+}
+
+.squad-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.squad-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13.5px;
+}
+
+.squad-title .i {
+  color: var(--sky);
+}
+
+.squad-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: var(--raised);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.squad-btn .i {
+  width: 16px;
+  height: 16px;
+}
+
+.squad-btn.release {
+  background: rgb(255 107 87 / 0.18);
+  color: #ffc9bf;
+}
+
+.squad-chips {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+.squad-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.squad-chip {
+  --hp: 100%;
+  position: relative;
+  flex: none;
+  display: grid;
+  gap: 4px;
+  min-width: 64px;
+  padding: 6px 9px 7px;
+  border-radius: 11px;
+  background: rgb(255 255 255 / 0.08);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.squad-chip i {
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--leaf) var(--hp), rgb(255 255 255 / 0.12) var(--hp));
+}
+
+.squad-chip.hurt i {
+  background: linear-gradient(90deg, var(--ember) var(--hp), rgb(255 255 255 / 0.12) var(--hp));
+}
+
+.squad-chip.on {
+  background: var(--sky);
+  color: #06233a;
+}
+
+.squad-hint {
+  margin: 0 2px;
+  color: #bcd8f2;
+  font-size: 12px;
+}
+
+.tool.armed {
+  color: #9fd4ff;
+}
+
+.tool.armed.active {
+  background: var(--sky);
+  color: #06233a;
+}
+
+/* Colony */
+
+.research-now {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--raised);
+}
+
+.research-now b {
+  font-size: 15px;
+}
+
+.research-now .progress {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.research-now p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tech-list,
+.craft-list,
+.settler-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.tech {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.tech[data-tech] {
+  cursor: pointer;
+}
+
+.tech-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.tech-text b {
+  font-size: 13.5px;
+}
+
+.tech-text span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tech em {
+  flex: none;
+  color: var(--sky);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.tech.current {
+  outline: 2px solid var(--sun);
+  outline-offset: -2px;
+}
+
+.tech.current em {
+  color: var(--sun);
+}
+
+.tech.done {
+  opacity: 0.6;
+}
+
+.tech.locked {
+  opacity: 0.45;
+}
+
+.tech.locked em {
+  color: var(--muted);
+}
+
+.i.ok {
+  color: var(--leaf);
+}
+
+.craft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.craft > .i {
+  color: var(--sun);
+}
+
+.craft.locked {
+  opacity: 0.5;
+}
+
+.craft-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.craft-text b {
+  font-size: 13.5px;
+}
+
+.craft-text span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.stepper {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--raised);
+}
+
+.stepper button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.stepper button .i {
+  width: 16px;
+  height: 16px;
+}
+
+.stepper b {
+  min-width: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.settler {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.05);
+  cursor: pointer;
+}
+
+.settler .avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.settler .avatar b {
+  font-size: 14px;
+}
+
+.settler-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.settler-text b {
+  font-size: 13.5px;
+}
+
+.settler-text span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settler select {
+  flex: none;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--raised);
+  color: var(--paper);
+  font: 600 13px var(--font);
+}
+
+.founders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.founders li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--raised);
+  font-size: 12.5px;
 }

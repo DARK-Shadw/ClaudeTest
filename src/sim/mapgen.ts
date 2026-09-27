@@ -1,4 +1,4 @@
-/** Procedural generation of one region: lakes, beaches, meadows, forests and rocky ridges. */
+/** Procedural generation of one region: lakes, beaches, meadows, forests, rocky ridges and iron veins. */
 import { FEATURE, MAP_H, MAP_N, MAP_W, TERRAIN } from './constants';
 import { DIRS, cheb, inBounds, isEdge, tileIndex, tileX, tileY } from './grid';
 import { fbm, hash01 } from './noise';
@@ -17,8 +17,8 @@ export function generateMap(seed: number): GeneratedMap {
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
       const t = tileIndex(x, y);
-      elev[t] = fbm(seed, x / 11, y / 11, 4);
-      moist[t] = fbm(seed ^ 0x5bd1e995, x / 8, y / 8, 3);
+      elev[t] = fbm(seed, x / 13, y / 13, 4);
+      moist[t] = fbm(seed ^ 0x5bd1e995, x / 9, y / 9, 3);
     }
   }
 
@@ -64,14 +64,16 @@ export function generateMap(seed: number): GeneratedMap {
     } else if (hash01(seed + 29, x, y) < (m > 0.42 && m < 0.62 ? 0.08 : 0.03)) {
       feature[t] = FEATURE.BUSH;
     } else if (hash01(seed + 41, x, y) < (nearMountain(t) ? 0.2 : 0.012)) {
-      feature[t] = FEATURE.BOULDER;
+      // Veins of iron show up among the rocks at the foot of the mountains.
+      feature[t] = nearMountain(t) && hash01(seed + 43, x, y) < 0.35 ? FEATURE.ORE : FEATURE.BOULDER;
     }
   }
 
   for (let t = 0; t < MAP_N; t++) if (cheb(t, home) <= CLEAR_RADIUS) feature[t] = FEATURE.NONE;
   ensureNearby(seed + 53, terrain, feature, home, FEATURE.BUSH, 10, 11);
   ensureNearby(seed + 59, terrain, feature, home, FEATURE.TREE, 16, 10);
-  ensureNearby(seed + 61, terrain, feature, home, FEATURE.BOULDER, 3, 12);
+  ensureNearby(seed + 61, terrain, feature, home, FEATURE.BOULDER, 4, 12);
+  ensureNearby(seed + 67, terrain, feature, home, FEATURE.ORE, 3, 22);
   connectToEdge(terrain, feature, home);
 
   return { terrain, feature, home };

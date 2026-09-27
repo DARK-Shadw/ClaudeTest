@@ -1,4 +1,4 @@
-import { START_HOUR, TICKS_PER_DAY, TICKS_PER_HOUR } from './constants';
+import { DAYS_PER_SEASON, START_HOUR, TICKS_PER_DAY, TICKS_PER_HOUR } from './constants';
 
 const OFFSET = START_HOUR * TICKS_PER_HOUR;
 
@@ -14,6 +14,16 @@ export function isNight(tick: number): boolean {
 
 /** The tick at which a given day and hour begins. */
 export const tickAt = (day: number, hour: number): number => (day - 1) * TICKS_PER_DAY + hour * TICKS_PER_HOUR - OFFSET;
+
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+export const SEASONS: readonly Season[] = ['spring', 'summer', 'autumn', 'winter'];
+export const SEASON_LABEL: Record<Season, string> = { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' };
+/** Crops and bushes grow at this rate; nothing grows in winter. */
+export const SEASON_GROWTH: Record<Season, number> = { spring: 1, summer: 1.2, autumn: 0.8, winter: 0 };
+
+export const seasonOf = (tick: number): Season => SEASONS[Math.floor((dayOf(tick) - 1) / DAYS_PER_SEASON) % 4];
+export const yearOf = (tick: number): number => Math.floor((dayOf(tick) - 1) / (DAYS_PER_SEASON * 4)) + 1;
+export const dayOfSeason = (tick: number): number => ((dayOf(tick) - 1) % DAYS_PER_SEASON) + 1;
 
 const pad = (n: number): string => (n < 10 ? `0${n}` : `${n}`);
 

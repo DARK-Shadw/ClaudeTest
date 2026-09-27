@@ -1,9 +1,11 @@
 /**
- * Grid pathfinding. A single Dijkstra flood from a pawn answers "what is the nearest X I can
- * reach?" for every kind of work at once, which is cheaper than one A* search per candidate.
- * Costs are integers (10 per straight step) so results are identical on every device.
+ * Grid pathfinding and sight lines. A single Dijkstra flood from a pawn answers "what is the
+ * nearest X I can reach?" for every kind of work at once, which is cheaper than one A* search
+ * per candidate. Costs are integers (10 per straight step) so results are identical on every
+ * device.
  */
-import { FEATURE, MAP_N, MAP_W, SK, TERRAIN } from './constants';
+import { FEATURE, MAP_N, MAP_W, TERRAIN } from './constants';
+import { BUILDINGS, CODE_KIND, STRUCT_CODE } from './defs';
 import { DIRS, inBounds, tileIndex, tileX, tileY } from './grid';
 import type { SimState } from './types';
 
@@ -15,11 +17,17 @@ export interface Flood {
   start: number;
 }
 
-/** Walls, doors and campfires stop raiders until they smash them. */
-export function isBashTarget(s: SimState, t: number): boolean {
-  const k = s.structKind[t];
-  return k === SK.WALL || k === SK.STONE_WALL || k === SK.DOOR || k === SK.CAMPFIRE;
-}
+const DOOR = STRUCT_CODE.door;
+const SOLID: readonly boolean[] = CODE_KIND.map((k) => !!k && k !== 'grave' && BUILDINGS[k].solid);
+const SLOW: readonly number[] = CODE_KIND.map((k) => (k && k !== 'grave' ? BUILDINGS[k].slow : 0));
+/** Extra cost a raider pays to plan through a building it will have to smash. */
+const BASH: readonly number[] = CODE_KIND.map((k) =>
+  k && k !== 'grave' && (BUILDINGS[k].solid || k === 'door') ? Math.round(BUILDINGS[k].hp * 0.9) : 0,
+);
+const SIGHT_BLOCK: readonly boolean[] = CODE_KIND.map((k) => k === 'wall' || k === 'stoneWall' || k === 'door');
+
+/** Walls, doors and other solid buildings stop raiders until they smash them. */
+export const isBashTarget = (s: SimState, t: number): boolean => BASH[s.structKind[t]] > 0;
 
 /**
  * Cost of stepping onto a tile orthogonally, or -1 if impassable. Raiders plan straight
@@ -29,26 +37,20 @@ export function enterCost(s: SimState, t: number, raider: boolean): number {
   const terrain = s.terrain[t];
   if (terrain === TERRAIN.WATER || terrain === TERRAIN.MOUNTAIN) return -1;
   const feature = s.feature[t];
-  if (feature === FEATURE.BOULDER) return -1;
-  const base = feature === FEATURE.TREE ? 16 : feature === FEATURE.BUSH ? 13 : 10;
-  switch (s.structKind[t]) {
-    case SK.WALL:
-      return raider ? base + 140 : -1;
-    case SK.STONE_WALL:
-      return raider ? base + 360 : -1;
-    case SK.CAMPFIRE:
-      return raider ? base + 60 : -1;
-    case SK.DOOR:
-      return raider ? base + 90 : base + 6;
-    default:
-      return base;
-  }
+  if (feature === FEATURE.BOULDER || feature === FEATURE.ORE) return -1;
+  let cost = feature === FEATURE.TREE ? 16 : feature === FEATURE.BUSH ? 13 : s.floor[t] ? 8 : 10;
+  const code = s.structKind[t];
+  if (!code) return cost;
+  if (SOLID[code]) return raider ? cost + BASH[code] : -1;
+  if (code === DOOR) return raider ? cost + BASH[code] : cost + 6;
+  cost += SLOW[code];
+  return cost;
 }
 
 /** Open ground for the no-corner-cutting rule on diagonal steps. */
 function open(s: SimState, t: number, raider: boolean): boolean {
   if (enterCost(s, t, false) < 0) return false;
-  return !(raider && s.structKind[t] === SK.DOOR);
+  return !(raider && s.structKind[t] === DOOR);
 }
 
 export const diagonalCost = (straight: number): number => ((straight * 14 + 5) / 10) | 0;
@@ -227,4 +229,57 @@ export function pathTo(f: Flood, dest: number): number[] {
   }
   out.reverse();
   return out;
+}
+
+// Sight
+
+function blocksSight(s: SimState, t: number): boolean {
+  return s.terrain[t] === TERRAIN.MOUNTAIN || SIGHT_BLOCK[s.structKind[t]];
+}
+
+/** True when nothing tall stands on the straight line between two tiles (Bresenham). */
+export function lineOfSight(s: SimState, a: number, b: number): boolean {
+  let x0 = tileX(a);
+  let y0 = tileY(a);
+  const x1 = tileX(b);
+  const y1 = tileY(b);
+  const dx = Math.abs(x1 - x0);
+  const dy = -Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+  for (;;) {
+    if (x0 === x1 && y0 === y1) return true;
+    const e2 = 2 * err;
+    if (e2 >= dy) {
+      err += dy;
+      x0 += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      y0 += sy;
+    }
+    if (x0 === x1 && y0 === y1) return true;
+    if (blocksSight(s, tileIndex(x0, y0))) return false;
+  }
+}
+
+const BARRICADE = STRUCT_CODE.barricade;
+
+/** How much a target is hidden from a shooter by barricades, trees and rocks next to it. */
+export function coverAt(s: SimState, target: number, from: number): number {
+  if (s.structKind[target] === BARRICADE) return 0.35;
+  const tx = tileX(target);
+  const ty = tileY(target);
+  const nx = tx + Math.sign(tileX(from) - tx);
+  const ny = ty + Math.sign(tileY(from) - ty);
+  if (!inBounds(nx, ny) || (nx === tx && ny === ty)) return 0;
+  const n = tileIndex(nx, ny);
+  const code = s.structKind[n];
+  if (code === BARRICADE) return 0.35;
+  if (SIGHT_BLOCK[code]) return 0.25;
+  const f = s.feature[n];
+  if (f === FEATURE.BOULDER || f === FEATURE.ORE) return 0.25;
+  if (f === FEATURE.TREE) return 0.15;
+  return 0;
 }

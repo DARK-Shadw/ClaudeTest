@@ -1,8 +1,9 @@
 /** Local persistence. Every access is guarded: storage can be missing, full or blocked. */
 import { deserialize, serialize, type SimState } from './sim';
 
-const SAVE_KEY = 'hearthwild.save.v1';
-const SAVED_AT_KEY = 'hearthwild.savedAt.v1';
+/** Saves from an older version of the simulation are left alone rather than misread. */
+const SAVE_KEY = 'hearthwild.save.v2';
+const SAVED_AT_KEY = 'hearthwild.savedAt.v2';
 const PREFS_KEY = 'hearthwild.prefs.v1';
 
 export interface Prefs {
