@@ -3,3 +3,10 @@ dist/
 dist-artifact/
 *.log
 .DS_Store
+
+# arena (python)
+__pycache__/
+*.pyc
+.pytest_cache/
+arena/runs/
+arena/viewer/watch.html
