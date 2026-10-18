@@ -15,7 +15,7 @@ const store = {
 const coarse = matchMedia('(pointer: coarse)').matches;
 
 const S = {
-  ws: null, room: null, token: null, you: -1, joined: false, leaving: false,
+  gen: 0, room: null, token: null, you: -1, joined: false, leaving: false,
   cur: null, lastSeq: -1, tableBuilt: false, queue: Promise.resolve(), backlog: 0,
   busy: false, selected: null, muted: store.get('unm:muted') === '1', emoteSeen: {}, timerKey: '',
   pile: [], avatarKey: {},
@@ -149,38 +149,37 @@ function toast(msg, ms = 2200) {
   clearTimeout(toast.t);
   toast.t = setTimeout(() => t.classList.remove('show'), ms);
 }
-const roomParam = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 const tokenKey = (r) => `unm:token:${r}`;
-const inviteLink = (r) => `${location.origin}${location.pathname}?room=${r}`;
+const inviteLink = (r) => Net.inviteLink(r);
 
 function connect(roomCode) {
   S.leaving = false;
+  const gen = ++S.gen;
   const name = $('#nameInput').value.trim();
   if (name) store.set('unm:name', name);
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${proto}://${location.host}`);
-  S.ws = ws;
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ t: 'join', room: roomCode || null, name: name || store.get('unm:name') || 'Player', token: roomCode ? store.get(tokenKey(roomCode)) : null }));
-  };
-  ws.onmessage = (e) => onMessage(JSON.parse(e.data));
-  ws.onclose = () => {
-    if (S.ws !== ws || S.leaving) return;
-    if (S.joined) {
-      toast('Connection lost — reconnecting…', 3000);
-      setTimeout(() => { if (!S.leaving) connect(S.room); }, 1500);
-    } else {
-      $('#homeErr').textContent = 'Could not reach the server.';
-    }
-  };
+  Net.open(
+    { room: roomCode || null, name: name || store.get('unm:name') || 'Player', token: roomCode ? store.get(tokenKey(roomCode)) : null },
+    {
+      message: (m) => { if (gen === S.gen) onMessage(m); },
+      closed: () => {
+        if (gen !== S.gen || S.leaving) return;
+        if (S.joined) {
+          toast('Connection lost — reconnecting…', 3000);
+          setTimeout(() => { if (!S.leaving) connect(S.room); }, 1500);
+        } else {
+          $('#homeErr').textContent = 'Could not reach the server.';
+        }
+      },
+    },
+  );
 }
-const send = (m) => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(m)); };
+const send = (m) => Net.send(m);
 
 function onMessage(m) {
   if (m.t === 'joined') {
     S.joined = true; S.room = m.room; S.token = m.token;
     store.set(tokenKey(m.room), m.token);
-    history.replaceState(null, '', `?room=${m.room}`);
+    Net.setRoom(m.room);
   } else if (m.t === 'state') {
     S.you = m.you;
     S.backlog++;
@@ -188,21 +187,24 @@ function onMessage(m) {
   } else if (m.t === 'error') {
     S.busy = false;
     if (m.fatal) {
-      S.joined = false; S.leaving = true;
+      S.joined = false; S.leaving = true; Net.close();
       show('home'); $('#homeErr').textContent = m.msg;
-      if (/not found/i.test(m.msg)) { history.replaceState(null, '', location.pathname); }
+      if (/not found/i.test(m.msg)) Net.setRoom(null);
+      setupHome();
     } else { toast(m.msg); sfx.nope(); }
+  } else if (m.t === 'notice') {
+    toast(m.msg, 5000);
   } else if (m.t === 'kicked') {
     leave('You were removed from the room.');
   }
 }
 
 function leave(msg) {
-  S.leaving = true; S.joined = false;
+  S.leaving = true; S.joined = false; S.gen++;
   if (S.room) store.del(tokenKey(S.room));
-  if (S.ws) S.ws.close();
+  Net.close();
   S.room = null; S.tableBuilt = false; S.cur = null;
-  history.replaceState(null, '', location.pathname);
+  Net.setRoom(null);
   show('home');
   $('#winOverlay').classList.add('hidden');
   $('#homeErr').textContent = msg || '';
@@ -212,7 +214,8 @@ function leave(msg) {
 /* ---------------- home ---------------- */
 function setupHome() {
   $('#nameInput').value = store.get('unm:name') || '';
-  const hasRoom = roomParam.length === 4 && !S.room && new URLSearchParams(location.search).get('room');
+  const roomParam = Net.initialRoom();
+  const hasRoom = roomParam.length === 4 && !S.room;
   $('#createBtn').classList.toggle('hidden', !!hasRoom);
   $('#orRow').classList.toggle('hidden', !!hasRoom);
   $('#joinRow').classList.toggle('hidden', !!hasRoom);
@@ -221,7 +224,7 @@ function setupHome() {
   if (hasRoom) $('#joinNote').innerHTML = `You're invited to room <b>${roomParam}</b>`;
 }
 $('#createBtn').onclick = () => { sfx.pop(); connect(null); };
-$('#joinBtn').onclick = () => { sfx.pop(); connect(roomParam); };
+$('#joinBtn').onclick = () => { sfx.pop(); connect(Net.initialRoom()); };
 $('#codeBtn').onclick = () => {
   const c = $('#codeInput').value.toUpperCase().replace(/[^A-Z]/g, '');
   if (c.length !== 4) { $('#homeErr').textContent = 'Room codes have 4 letters.'; return; }
@@ -262,7 +265,7 @@ function renderLobby(st) {
 }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 async function copyInvite() {
-  const link = inviteLink(S.room);
+  const link = Net.inviteText ? Net.inviteText(S.room) : inviteLink(S.room);
   try {
     if (navigator.share && coarse) await navigator.share({ title: 'Uno No Mercy', text: 'Join my Uno No Mercy game!', url: link });
     else { await navigator.clipboard.writeText(link); toast('Invite link copied! 🎉'); }
@@ -710,7 +713,8 @@ async function applyState(st) {
  *  Boot
  * ======================================================================== */
 setupHome();
-if (roomParam.length === 4 && store.get(tokenKey(roomParam))) {
+const bootRoom = Net.initialRoom();
+if (bootRoom.length === 4 && store.get(tokenKey(bootRoom))) {
   // returning player: silently rejoin with the saved token
-  connect(roomParam);
+  connect(bootRoom);
 }

@@ -47,3 +47,11 @@ public/           index.html, style.css, app.js (rendering, animations, WebAudio
 
 The server is authoritative: clients only send `play` / `draw` / `pass`; the server validates
 every move and broadcasts a per-player view (opponents' hands are never sent).
+
+## Artifact build (no server)
+
+`node tools/build-artifact.js` bundles everything into one HTML file (`artifact/uno-no-mercy.html`).
+There, the player who creates a game *hosts* it: the same `Room`/`Game` engine runs in their tab and
+other players connect through the Artifact `room` capability using the 4-letter code. If the host
+closes the tab the game ends. Without the `room` capability the page falls back to solo play vs bots.
+`public/net-ws.js` (Node server) and `public/net-room.js` (artifact) are the two interchangeable transports.
