@@ -1,0 +1,14 @@
+{
+  "name": "uno-no-mercy",
+  "version": "1.0.0",
+  "description": "Cartoony Uno No Mercy clone with link-based multiplayer",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node server/test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "license": "MIT"
+}
